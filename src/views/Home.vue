@@ -204,6 +204,17 @@ export default {
           this.logs = chats;
         });
       });
+    //Tiempo real
+    db.collection("chat").onSnapshot((query) => {
+      query.forEach((doc) => {
+        console.log(doc.data());
+        if (doc.data().u == this.user) {
+          this.logs.push(doc.data());
+        } else {
+          this.logs.push(doc.data());
+        }
+      });
+    });
     this.login();
   },
   computed: {
