@@ -14,10 +14,10 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/precache-manifest.fce54d59db9a584af1b3994d5b1e3735.js"
+  "/precache-manifest.42415e62017927a53b04070fea7c6adb.js"
 );
 
-workbox.core.setCacheNameDetails({prefix: "agendacj"});
+workbox.core.setCacheNameDetails({prefix: "radio"});
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
