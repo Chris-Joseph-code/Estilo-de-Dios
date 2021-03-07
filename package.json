@@ -13,6 +13,7 @@
     "roboto-fontface": "*",
     "vue": "^2.6.11",
     "vue-audio-visual": "^2.2.1",
+    "vue-offline": "^2.0.8",
     "vue-router": "^3.2.0",
     "vuetify": "^2.4.0",
     "vuetify-audio": "^0.3.3",
