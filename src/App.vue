@@ -4,9 +4,7 @@
 
       <!- If using vue-router -->
     <v-app>
-      <v-container style="padding-top: 40px">
-        <router-view></router-view>
-      </v-container>
+      <router-view></router-view>
     </v-app>
   </div>
 </template>
