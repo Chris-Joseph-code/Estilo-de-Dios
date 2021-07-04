@@ -5,9 +5,30 @@
       <!- If using vue-router -->
     <v-app>
       <router-view></router-view>
+      
+    
     </v-app>
   </div>
 </template>
+
+<script>
+export default {
+  data() {
+    return {
+      playing: false,
+    };
+  },
+  methods: {
+    
+  },
+  mounted() {
+    if (!localStorage.getItem("mySelf")) {
+      this.$router.push("/");
+      console.log(localStorage.getItem("mySelf"));
+    }
+  },
+};
+</script>
 
 <style>
 #app {

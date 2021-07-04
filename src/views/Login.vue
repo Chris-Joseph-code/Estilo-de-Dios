@@ -16,62 +16,58 @@
       style="grid-column: 1 / 3"
       prepend-icon="attachment"
     ></v-text-field>
-    <h3 style="margin: 12px; text-align: center; grid-column: 1 / 3">Foto de perfil</h3>
-    <v-file-input
-      style="grid-column: 1 / 3"
-      label="Foto de perfil"
-      filled
-      prepend-icon="camera"
-    ></v-file-input>
     <v-btn
       color="primary"
       style="grid-column: 1 / 3; margin-bottom: 15px"
       @click="addUsers()"
+      :disabled="name === ''"
       >Iniciar sesion</v-btn
     >
-    <v-btn color="grey" style="grid-column: 1 / 3" @click="login()"
-      >Usuario invitado</v-btn
-    >
+    <v-btn color="grey" style="grid-column: 1 / 3" to="home">Usuario invitado</v-btn>
   </v-container>
 </template>
 
 <script>
 import uniqid from "uniqid";
+import coolImages from "cool-images";
 
 export default {
   data() {
     return {
       name: "",
-      photo: "",
       id: uniqid(),
+      profilePicture: coolImages.one(),
     };
   },
   methods: {
-    async addUsers() {
+    addUsers() {
+      console.log(this.profilePicture);
       const db = firebase.firestore();
-      var mySelf = { name: this.name, id: this.id };
-      await db
-        .collection("users")
+      db.collection("users")
         .doc(this.id)
         .set({
           name: this.name,
           id: this.id,
+          profilePicture: coolImages.one(),
         })
         .then(() => {
+          var mySelf = {
+            name: this.name,
+            id: this.id,
+            profilePicture: this.profilePicture,
+          };
           localStorage.setItem("mySelf", JSON.stringify(mySelf));
-          window.location.replace("/home");
+          this.$router.push("/home");
+          console.log("Todo esta bien");
         })
         .catch((error) => {
-          console.error("Error writing document: ", error);
+          console.error("Hay un error: ", error);
         });
-    },
-    login() {
-      window.location.replace("/home");
     },
   },
   created() {
     if (localStorage.getItem("mySelf")) {
-      window.location.replace("/home");
+      this.$router.push("/home");
     }
   },
 };

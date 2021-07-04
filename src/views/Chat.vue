@@ -1,20 +1,10 @@
 <template>
   <div>
-    <audio id="radio" src="https://stream.zenolive.com/1bhx4nnmg5zuv.aac"></audio>
-    <img
-      style="
-        position: absolute;
-        z-index: 50;
-        top: 13px;
-        right: 60px;
-        width: 40px !important;
-      "
-      v-on:click="home()"
-      src="@/assets/close.png"
-    />
     <img class="pause" v-on:click="play()" v-if="playing" src="@/assets/pause.svg" />
     <img class="pause" v-on:click="play()" v-else src="@/assets/play.svg" />
+    <audio id="radio" src="https://stream.zenolive.com/1bhx4nnmg5zuv.aac"></audio>
     <Chat
+      v-if="visible"
       :participants="participants"
       :myself="myself"
       :messages="messages"
@@ -22,43 +12,49 @@
       :placeholder="placeholder"
       :colors="colors"
       :border-style="borderStyle"
-      :hide-close-button="showCloseButton"
+      :hide-close-button="hideCloseButton"
       :close-button-icon-size="closeButtonIconSize"
       :submit-icon-size="submitIconSize"
       :submit-image-icon-size="submitImageIconSize"
       :load-more-messages="toLoad.length > 0 ? loadMoreMessages : null"
-      :link-options="linkOptions"
       :async-mode="asyncMode"
       :scroll-bottom="scrollBottom"
       :display-header="true"
       :send-images="true"
       :profile-picture-config="profilePictureConfig"
-      :timestamp-config="timestampConfig"
+      :link-options="linkOptions"
+      :accept-image-types="'.png, .jpeg'"
       @onImageClicked="onImageClicked"
       @onImageSelected="onImageSelected"
       @onMessageSubmit="onMessageSubmit"
       @onType="onType"
       @onClose="onClose"
-    >
-      <template v-slot:header>
-        <div>
-          <p
-            v-for="(participant, index) in participants"
-            :key="index"
-            class="custom-title"
-          >
-            {{ participant.name }}
-          </p>
-        </div>
-      </template>
-    </Chat>
+    />
   </div>
 </template>
 
 <script>
 import { Chat } from "vue-quick-chat";
 import "vue-quick-chat/dist/vue-quick-chat.css";
+import uniqid from "uniqid";
+var participantes = [];
+import coolImages from "cool-images";
+const { DateTime } = require("luxon");
 const db = firebase.firestore();
+
+db.collection("users")
+  .get()
+  .then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      if (doc.data().id == JSON.parse(localStorage.getItem("mySelf")).id) {
+        console.log("Ya estas aqui: ", doc.data());
+      } else {
+        // doc.data() will be undefined in this case
+        participantes.push(doc.data());
+        console.log("No such document!", doc.data());
+      }
+    });
+  });
 export default {
   components: {
     Chat,
@@ -67,14 +63,18 @@ export default {
     return {
       playing: false,
       visible: true,
-      participants: [],
-      myself: JSON.parse(localStorage.getItem("mySelf")),
+      participants: participantes,
+      myself: JSON.parse(localStorage.getItem("mySelf")) || {
+        name: "Usuario anonimo",
+        id: uniqid(),
+        profilePicture: coolImages.one(),
+      },
       messages: [],
-      chatTitle: "My chat title",
-      placeholder: "Enviar un mensaje",
+      chatTitle: "Radio Estilo de Dios",
+      placeholder: "Enviar mensaje",
       colors: {
         header: {
-          bg: "#d30303",
+          bg: "#36b3fb",
           text: "#fff",
         },
         message: {
@@ -118,10 +118,6 @@ export default {
           borderRadius: "50%",
         },
       },
-      timestampConfig: {
-        format: "HH:mm",
-        relative: false,
-      },
       // there are other options, you can check them here
       // https://soapbox.github.io/linkifyjs/docs/options.html
       linkOptions: {
@@ -163,13 +159,9 @@ export default {
     };
   },
   methods: {
-    home() {
-      window.location.replace("/home");
-    },
     play() {
       this.playing = !this.playing;
       if (this.playing) {
-        var radio = document.getElementById("radio");
         document.getElementById("radio").play();
       } else {
         document.getElementById("radio").pause();
@@ -192,8 +184,20 @@ export default {
        * It's important to notice that even when your message wasn't send
        * yet to the server you have to add the message into the array
        */
+      message.timestamp = new Date().toString();
       this.messages.push(message);
-
+      db.collection("messages")
+        .doc()
+        .set({
+          ...message,
+        })
+        .then(() => {
+          console.log("Se subio :)");
+        })
+        .catch((e) => {
+          console.log("No funciono :(");
+        });
+      console.log(new Date());
       /*
        * you can update message state after the server response
        */
@@ -203,7 +207,7 @@ export default {
       }, 2000);
     },
     onClose() {
-      this.visible = false;
+      this.$router.push("/home");
     },
     onImageSelected(files, message) {
       let src =
@@ -235,29 +239,10 @@ export default {
 </script>
 
 <style>
-.custom-title {
-  margin-bottom: 16px;
-  display: inline !important;
-  color: white;
-}
 .pause {
-  max-width: 50px;
-  position: absolute;
+  position: absolute !important;
+  right: 40px;
   top: 10px;
-  right: 0;
-  z-index: 50;
-}
-.header-container {
-  background: #4185ea !important;
-}
-.message-text {
-  background: #4185ea !important;
-  color: #fff !important;
-}
-.message-username {
-  color: #fff;
-}
-.material-design-icon__svg {
-  fill: #4185ea !important;
+  z-index: 100;
 }
 </style>

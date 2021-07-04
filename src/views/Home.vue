@@ -11,44 +11,62 @@
         <v-icon style="margin: 0 2px 3px 0px">fiber_manual_record</v-icon>Conexión a
         internet perdida
       </p>
-      <img class="logo" src="@/assets/logo.png" />
-      <v-icon style="font-size: 40px; margin: 0 14px 29px 14px" color="black"
-        >info</v-icon
-      >
-      <img class="pause" v-on:click="play()" v-if="playing" src="@/assets/pause.svg" />
-      <img class="pause" v-on:click="play()" v-else src="@/assets/play.svg" />
-      <img
-        src="@/assets/chat.svg"
-        style="width: 40px; margin: 7px 0 0 7px; display: inline-block"
-        v-on:click="home()"
-      />
+      <div class="img-div">
+        <img
+          style="width: 450px"
+          class="logo"
+          src="https://imgproxy.zenomedia.com/insecure/fit/500/500/ce/0/plain/https://proxy.zeno.fm/content/stations/agxzfnplbm8tc3RhdHNyMgsSCkF1dGhDbGllbnQYgICQo7zvzwgMCxIOU3RhdGlvblByb2ZpbGUYgICQw8n1swoMogEEemVubw/image/%3Fresize=500x500&v=1"
+        />
+      </div>
+      <div class="img-div">
+        <vue-slider
+          heigth="75px"
+          id="v_slide"
+          v-on:change="volumen()"
+          direction="btt"
+          v-model="volume"
+        ></vue-slider>
+        <v-icon @click="f == true ? vold() : voldNeg()" id="v_icon">volume_up</v-icon>
+        <img class="pause" v-on:click="play()" v-if="playing" src="@/assets/pause.svg" />
+        <img class="pause" v-on:click="play()" v-else src="@/assets/play.svg" />
+        <img
+          src="@/assets/chat.svg"
+          style="width: 40px; margin: 7px 0 0 7px; display: inline-block"
+          @click="home()"
+        />
+      </div>
       <audio id="radio" src="https://stream.zenolive.com/1bhx4nnmg5zuv.aac"></audio>
     </div>
   </v-container>
 </template>
 
 <script>
-// @ is an alias to /src
 export default {
   name: "Home",
   data() {
     return {
+      f: true,
+      op: false,
       playing: false,
       dialog: true,
       chat: false,
       logs: [],
       msg: "",
-      mySelf: JSON.parse(localStorage.getItem("mySelf")) || { name: "Usuario" },
+      esFlat: "flat",
+      volume: 100,
+      mySelf: JSON.parse(localStorage.getItem("mySelf")) || {
+        name: "Usuario",
+        photo: randomPicture(),
+      },
     };
   },
   methods: {
     home() {
-      window.location.replace("/chat");
+      this.$router.push("/chat");
     },
     play() {
       this.playing = !this.playing;
       if (this.playing) {
-        var radio = document.getElementById("radio");
         document.getElementById("radio").play();
       } else {
         document.getElementById("radio").pause();
@@ -60,79 +78,91 @@ export default {
         localStorage.setItem("user", this.user);
       }
     },
-    async submit() {
-      if (this.msg !== "") {
-        // Condicional para evaluar si el mensaje es mio
-        if (localStorage.getItem("user") == this.user) {
-          this.colorMine = "Cm";
-        } else {
-          this.colorMine = "Cnm";
-        }
-        var db = firebase.firestore();
-        db.collection("chat").add({
-          m: this.msg,
-          u: this.user,
-          cm: this.colorMine,
-          d: Date.now(),
-        });
-        this.msg = "";
-        db.collection("chat").orderBy(Date.now());
-        db.collection("chat").onSnapshot((query) => {
-          query.forEach((doc) => {
-            console.log(doc.data());
-            if (doc.data().u == this.user) {
-              doc.data().cm = "Cm";
-              this.logs.push(doc.data());
-            } else {
-              this.logs.push(doc.data());
-              doc.data().cm = "Cnm";
-            }
+    volumen() {
+      let volumen = this.volume / 100;
+      let radio = document.getElementById("radio");
+      radio.volume = volumen;
+      console.log(volumen);
+    },
+    vold() {
+      this.f = !this.f;
+      let vIcon = document.getElementById("v_icon");
+      let vSlide = document.getElementById("v_slide");
+      vIcon.style.top = "50px";
+      vSlide.style.left = "30px";
+      vSlide.style.display = "block";
+      console.log("Vold", this.f);
+    },
+    voldNeg() {
+      this.f = !this.f;
+      let vIcon = document.getElementById("v_icon");
+      let vSlide = document.getElementById("v_slide");
+      vIcon.style.top = "7px";
+      vIcon.style.right = "7px";
+      vSlide.style.display = "none";
+
+      console.log("voldNeg", this.f);
+    },
+    watch: {
+      logs() {
+        setTimeout(() => {
+          this.$refs.chat.$el.scrollTop = this.$refs.chat.$el.scrollHeight;
+        }, 0);
+      },
+    },
+    mounted() {
+      let chats = [];
+      let db = firebase.firestore();
+      db.collection("chat")
+        .get()
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            // doc.data() is never undefined for query doc snapshots
+            chats.push(doc.data());
+            this.logs = chats;
           });
         });
-      }
-    },
-  },
-  watch: {
-    logs() {
-      setTimeout(() => {
-        this.$refs.chat.$el.scrollTop = this.$refs.chat.$el.scrollHeight;
-      }, 0);
-    },
-  },
-  mounted() {
-    var chats = [];
-    var db = firebase.firestore();
-    db.collection("chat")
-      .get()
-      .then((querySnapshot) => {
-        querySnapshot.forEach((doc) => {
-          // doc.data() is never undefined for query doc snapshots
-          chats.push(doc.data());
-          this.logs = chats;
+      //Tiempo real
+      db.collection("chat").onSnapshot((query) => {
+        query.forEach((doc) => {
+          console.log(doc.data());
+          if (doc.data().u == this.user) {
+            this.logs.push(doc.data());
+          } else {
+            this.logs.push(doc.data());
+          }
         });
       });
-    //Tiempo real
-    db.collection("chat").onSnapshot((query) => {
-      query.forEach((doc) => {
-        console.log(doc.data());
-        if (doc.data().u == this.user) {
-          this.logs.push(doc.data());
-        } else {
-          this.logs.push(doc.data());
-        }
-      });
-    });
-    this.login();
-  },
-  computed: {
-    networkStatus() {
-      return this.isOnline ? "My network is fine" : "I am offline";
+      this.login();
+    },
+    computed: {
+      networkStatus() {
+        return this.isOnline ? "My network is fine" : "I am offline";
+      },
     },
   },
 };
 </script>
 
 <style>
+#v_slide {
+  position: relative;
+  display: none;
+}
+.v-icon {
+  color: black !important;
+  font-size: 40px !important;
+  top: 7px;
+  right: 7px;
+}
+#v-icon {
+  color: rgb(0, 0, 0) !important;
+  font-size: 60px !important;
+}
+.upV {
+  max-width: 60px !important;
+  display: inline-block !important;
+}
 .pause {
   max-width: 50px;
   margin: 0 7px 0 7px;
@@ -150,6 +180,10 @@ export default {
   max-width: 90%;
   border-radius: 10px;
   margin: 0 5% 5% 5%;
+}
+.img-div {
+  display: flex;
+  justify-content: center;
 }
 
 .michat {
